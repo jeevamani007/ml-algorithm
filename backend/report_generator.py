@@ -1,6 +1,7 @@
 import pandas as pd
 from typing import Dict, Any
 from datetime import datetime
+from business_formatter import BusinessFormatter
 
 class ReportGenerator:
     """Generates comprehensive reports"""
@@ -91,6 +92,43 @@ class ReportGenerator:
                 )
             except Exception as e:
                 report["sections"]["visualization_suggestions"] = [f"Could not generate visualization suggestions: {str(e)}"]
+            
+            # 9. Business-Friendly Summary (per requirements)
+            try:
+                formatter = BusinessFormatter()
+                model_data = dataset_info.get("models", {}).get(domain, {})
+                rules_data = dataset_info.get("rules", {}).get(domain, {})
+                explain_data = dataset_info.get("explanations", {}).get(domain, {})
+                
+                # Get key rules
+                all_rules = (rules_data.get("if_then_rules", []) + 
+                            rules_data.get("association_rules", []))
+                key_rules = formatter.highlight_key_rules(all_rules, max_rules=5)
+                
+                # Get relationships
+                feature_impact = explain_data.get("feature_importance", {})
+                relationships = formatter.get_relationships_explanation(feature_impact, domain)
+                
+                # Generate summary
+                model_metrics = model_data.get("metrics", {})
+                data_issues = []
+                if dataset_info.get("preprocessed_data", {}).get(domain, {}).get("preprocessing_info", {}).get("missing_values_before", {}):
+                    missing = dataset_info["preprocessed_data"][domain]["preprocessing_info"]["missing_values_before"]
+                    total_missing = sum(missing.values())
+                    if total_missing > 0:
+                        data_issues.append(f"Dataset had {total_missing} missing values that were handled during processing.")
+                
+                summary = formatter.generate_summary(
+                    domain, model_metrics, key_rules, relationships, data_issues
+                )
+                
+                report["sections"]["business_summary"] = summary
+            except Exception as e:
+                report["sections"]["business_summary"] = {
+                    "what_we_learned": ["Analysis completed successfully."],
+                    "what_to_do_next": ["Review the results and apply insights to your business."],
+                    "limitations": [f"Some summary information could not be generated: {str(e)}"]
+                }
             
             return report
         except Exception as e:

@@ -156,6 +156,12 @@ async function processAutomatically(uploadData) {
         }
         
         currentDomain = domainData.primary_domain || domainData.detected_domains[0]?.domain || 'General';
+        
+        // Merge data understanding from domain detection
+        if (domainData.data_understanding) {
+            uploadData.data_understanding = domainData.data_understanding;
+        }
+        
         updateProgressStep('detect', `Domain detected: ${currentDomain}`, false, true);
         
         // Step 2: Preprocess
@@ -309,8 +315,17 @@ function displayAutomaticResults(uploadData, domainData, preprocessData, trainDa
             <p>All steps completed successfully. Review the results below.</p>
         </div>
         
+        <!-- Data Understanding -->
+        ${uploadData.data_understanding ? `
+        <h3 style="margin-top: 20px;">1. What This Data Is About</h3>
+        <div class="results" style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+            <p><strong>${uploadData.data_understanding.what_is_this}</strong></p>
+            <p style="margin-top: 10px;">${uploadData.data_understanding.why_important}</p>
+        </div>
+        ` : ''}
+        
         <!-- Domain Detection -->
-        <h3 style="margin-top: 20px;">1. Domain Detection</h3>
+        <h3 style="margin-top: 20px;">${uploadData.data_understanding ? '2' : '1'}. Detected Business Domain</h3>
         <div class="results">
             <div class="table-container">
                 <table>
@@ -323,25 +338,31 @@ function displayAutomaticResults(uploadData, domainData, preprocessData, trainDa
                         </tr>
                     </thead>
                     <tbody>
-                        ${domainData.detected_domains.map(domain => `
+                        ${domainData.detected_domains.map(domain => {
+                            const confidenceLevel = domain.confidence_level || 
+                                (domain.confidence > 0.7 ? 'High' : domain.confidence > 0.4 ? 'Medium' : 'Low');
+                            const confidenceClass = confidenceLevel.toLowerCase();
+                            return `
                             <tr>
                                 <td><strong>${domain.domain}</strong></td>
                                 <td>
-                                    <span class="confidence-badge confidence-${domain.confidence > 0.7 ? 'high' : domain.confidence > 0.4 ? 'medium' : 'low'}">
-                                        ${(domain.confidence * 100).toFixed(1)}%
+                                    <span class="confidence-badge confidence-${confidenceClass}">
+                                        ${confidenceLevel}
                                     </span>
+                                    ${domain.confidence_level ? '' : `(${(domain.confidence * 100).toFixed(1)}%)`}
                                 </td>
                                 <td>${domain.matched_columns.join(', ') || 'None'}</td>
                                 <td>${uploadData.rows.toLocaleString()}</td>
                             </tr>
-                        `).join('')}
+                        `;
+                        }).join('')}
                     </tbody>
                 </table>
             </div>
         </div>
         
         <!-- Preprocessed Dataset Sample -->
-        <h3 style="margin-top: 30px;">2. Preprocessed Dataset Sample</h3>
+        <h3 style="margin-top: 30px;">${uploadData.data_understanding ? '3' : '2'}. Data Cleaning & Display</h3>
         <div class="results">
             ${preprocessData && preprocessData.sample_data ? `
                 <div class="table-container">
@@ -364,7 +385,7 @@ function displayAutomaticResults(uploadData, domainData, preprocessData, trainDa
         </div>
         
         <!-- Model Performance & Predictions -->
-        <h3 style="margin-top: 30px;">3. Model Performance & Sample Predictions</h3>
+        <h3 style="margin-top: 30px;">${uploadData.data_understanding ? '4' : '3'}. Predictions (Human Style)</h3>
         <div class="results">
             <p><strong>Model Type:</strong> ${trainData.model_type}</p>
             <p><strong>Target Column:</strong> ${trainData.target_column}</p>
@@ -390,14 +411,30 @@ function displayAutomaticResults(uploadData, domainData, preprocessData, trainDa
                             </tr>
                         </thead>
                         <tbody>
-                            ${trainData.sample_predictions.map(pred => `
+                            ${trainData.sample_predictions.map(pred => {
+                                // Format predictions as Low/Medium/High
+                                const formatPrediction = (val) => {
+                                    if (typeof val === 'number') {
+                                        if (val < 0.33) return 'Low';
+                                        if (val < 0.67) return 'Medium';
+                                        return 'High';
+                                    }
+                                    const valStr = String(val).toLowerCase();
+                                    if (['yes', 'true', '1', 'high'].includes(valStr)) return 'High';
+                                    if (['no', 'false', '0', 'low'].includes(valStr)) return 'Low';
+                                    return val;
+                                };
+                                const actualFormatted = formatPrediction(pred.actual);
+                                const predictedFormatted = formatPrediction(pred.predicted);
+                                return `
                                 <tr>
                                     <td>${pred.index}</td>
-                                    <td>${pred.actual}</td>
-                                    <td><strong>${pred.predicted}</strong></td>
+                                    <td><span class="confidence-badge confidence-${actualFormatted.toLowerCase()}">${actualFormatted}</span></td>
+                                    <td><strong><span class="confidence-badge confidence-${predictedFormatted.toLowerCase()}">${predictedFormatted}</span></strong></td>
                                     ${pred.confidence !== undefined ? `<td>${(pred.confidence * 100).toFixed(1)}%</td>` : ''}
                                 </tr>
-                            `).join('')}
+                            `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -405,7 +442,7 @@ function displayAutomaticResults(uploadData, domainData, preprocessData, trainDa
         </div>
         
         <!-- Feature Impact Table -->
-        <h3 style="margin-top: 30px;">4. Feature Impact Analysis</h3>
+        <h3 style="margin-top: 30px;">${uploadData.data_understanding ? '5' : '4'}. Key Relationships Found</h3>
         <div class="results">
             ${explainData && explainData.feature_impact_table && explainData.feature_impact_table.length > 0 ? `
                 <div class="table-container">
@@ -452,7 +489,7 @@ function displayAutomaticResults(uploadData, domainData, preprocessData, trainDa
         </div>
         
         <!-- Business Rules -->
-        <h3 style="margin-top: 30px;">5. Business Rules</h3>
+        <h3 style="margin-top: 30px;">${uploadData.data_understanding ? '6' : '5'}. Business Rules (Most Important)</h3>
         <div class="results">
             <h4>Association Rules (Apriori Algorithm):</h4>
             ${rulesData && rulesData.association_rules && rulesData.association_rules.length > 0 ? 
@@ -511,22 +548,31 @@ function displayAutomaticResults(uploadData, domainData, preprocessData, trainDa
         </div>
         
         <!-- Report Summary -->
-        <h3 style="margin-top: 30px;">6. Summary Report & Recommendations</h3>
+        <h3 style="margin-top: 30px;">${uploadData.data_understanding ? '7' : '6'}. Summary & Actionable Insights</h3>
         <div class="results">
             ${reportData && reportData.sections ? `
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <h4>📋 Complete Analysis Summary</h4>
-                    <ul style="margin-top: 10px; padding-left: 20px; line-height: 1.8;">
-                        <li><strong>Domain Detected:</strong> ${currentDomain}</li>
-                        <li><strong>Model Type:</strong> ${trainData.model_type}</li>
-                        <li><strong>Target Column:</strong> ${trainData.target_column}</li>
-                        <li><strong>Total Features:</strong> ${trainData.feature_columns ? trainData.feature_columns.length : 'N/A'}</li>
-                        <li><strong>Dataset Rows:</strong> ${uploadData.rows.toLocaleString()}</li>
-                        <li><strong>Dataset Columns:</strong> ${uploadData.columns}</li>
-                    </ul>
-                </div>
+                ${reportData.sections.business_summary ? `
+                    <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4>📚 What We Learned</h4>
+                        <ul style="margin-top: 10px; padding-left: 20px; line-height: 1.8;">
+                            ${reportData.sections.business_summary.what_we_learned.map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4>🎯 What Should You Do Next?</h4>
+                        <ul style="margin-top: 10px; padding-left: 20px; line-height: 1.8;">
+                            ${reportData.sections.business_summary.what_to_do_next.map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div style="background: #fff3e0; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4>⚠️ Limitations & Considerations</h4>
+                        <ul style="margin-top: 10px; padding-left: 20px; line-height: 1.8;">
+                            ${reportData.sections.business_summary.limitations.map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
                 ${reportData.sections.recommendations ? `
-                    <h4>💡 Recommendations:</h4>
+                    <h4 style="margin-top: 20px;">💡 Additional Recommendations:</h4>
                     <ul style="margin-top: 10px; padding-left: 20px; line-height: 1.8;">
                         ${reportData.sections.recommendations.map(rec => `<li>${rec}</li>`).join('')}
                     </ul>

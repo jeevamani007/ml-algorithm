@@ -150,10 +150,23 @@ async def detect_domain(request_data: Dict[str, Any] = Body(...)):
         
         processed_data_store[dataset_id]["detected_domains"] = domains
         
+        # Add confidence level (Low/Medium/High) for business users
+        from business_formatter import BusinessFormatter
+        formatter = BusinessFormatter()
+        for domain in domains:
+            domain["confidence_level"] = formatter.format_confidence_level(domain.get("confidence", 0.5))
+        
+        # Generate data understanding
+        primary_domain = domains[0]["domain"] if domains else "General"
+        data_understanding = formatter.get_data_understanding(
+            df, primary_domain, domains[0].get("matched_columns", []) if domains else []
+        )
+        
         return JSONResponse(content={
             "dataset_id": dataset_id,
             "detected_domains": domains,
-            "primary_domain": domains[0]["domain"] if domains else "General"
+            "primary_domain": primary_domain,
+            "data_understanding": data_understanding
         })
     
     except HTTPException:

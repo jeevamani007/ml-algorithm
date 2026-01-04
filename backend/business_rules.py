@@ -254,11 +254,21 @@ class BusinessRulesExtractor:
                     if low_count > 0:
                         avg_target = low_target_sum / low_count
                         if abs(avg_target - overall_avg) > 0.1 * abs(overall_avg) if overall_avg != 0 else True:
+                            # Format currency if applicable
+                            def format_value(val):
+                                if 'salary' in target_column.lower() or 'amount' in target_column.lower() or 'bonus' in target_column.lower():
+                                    return f"₹{val:,.0f}" if val >= 1000 else f"₹{val:.2f}"
+                                return f"{val:.2f}"
+                            
+                            impact_level = "high" if abs(avg_target - overall_avg) > 0.2 * abs(overall_avg) else "medium"
+                            explanation = f"When {col} is below {q25:.2f}, the {target_column} tends to be around {format_value(avg_target)}, which is {'significantly' if impact_level == 'high' else 'moderately'} different from the average."
+                            
                             rules.append({
-                                "rule": f"IF {col} < {q25:.2f} THEN {target_column} ≈ {avg_target:.2f}",
+                                "rule": f"IF {col} < {q25:.2f} THEN {target_column} ≈ {format_value(avg_target)}",
                                 "confidence": low_count / len(df) if len(df) > 0 else 0.0,
                                 "lift": avg_target / overall_avg if overall_avg != 0 else 1.0,
-                                "impact": "high" if abs(avg_target - overall_avg) > 0.2 * abs(overall_avg) else "medium"
+                                "impact": impact_level,
+                                "explanation": explanation
                             })
                     
                     # Rule 2: High values
