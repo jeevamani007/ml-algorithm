@@ -501,17 +501,19 @@ function displayAutomaticResults(uploadData, domainData, preprocessData, trainDa
                                 <th>Support</th>
                                 <th>Confidence</th>
                                 <th>Lift</th>
+                                <th>Purpose</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${rulesData.association_rules.slice(0, 10).map(rule => {
-                                if (rule.error) return `<tr><td colspan="4"><div class="error-message">${rule.error}</div></td></tr>`;
+                                if (rule.error) return `<tr><td colspan="5"><div class="error-message">${rule.error}</div></td></tr>`;
                                 return `
                                     <tr>
                                         <td><strong>${rule.rule}</strong></td>
                                         <td>${(rule.support * 100).toFixed(1)}%</td>
                                         <td>${(rule.confidence * 100).toFixed(1)}%</td>
                                         <td>${rule.lift ? rule.lift.toFixed(2) : 'N/A'}</td>
+                                        <td style="font-size: 0.9em; color: #555;">${rule.purpose || 'This association rule shows patterns in your data that can guide decision-making.'}</td>
                                     </tr>
                                 `;
                             }).join('')}
@@ -538,7 +540,10 @@ function displayAutomaticResults(uploadData, domainData, preprocessData, trainDa
                                     <td><strong>${rule.rule}</strong></td>
                                     <td>${(rule.confidence * 100).toFixed(1)}%</td>
                                     <td>${rule.lift ? rule.lift.toFixed(2) : 'N/A'}</td>
-                                    <td><span class="confidence-badge confidence-${rule.impact}">${rule.impact.toUpperCase()}</span></td>
+                                    <td>
+                                        <span class="confidence-badge confidence-${rule.impact || 'medium'}">${(rule.impact || 'medium').toUpperCase()}</span>
+                                        ${rule.purpose ? `<div style="margin-top: 8px; font-size: 0.85em; color: #555;"><strong>Purpose:</strong> ${rule.purpose}</div>` : ''}
+                                    </td>
                                 </tr>
                             `).join('')}
                         </tbody>

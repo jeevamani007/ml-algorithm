@@ -103,6 +103,10 @@ class BusinessRulesExtractor:
                         
                         if confidence >= min_confidence and support_both >= min_support:
                             rule_str = f"IF {item1} THEN {item2}"
+                            
+                            # Generate purpose explanation for association rules
+                            purpose = f"This rule shows that when {item1} occurs, {item2} is likely to occur as well (with {confidence*100:.1f}% confidence). This pattern helps you understand relationships in your data. You can use this insight to predict outcomes, identify opportunities, or make decisions based on these associations."
+                            
                             rules_list.append({
                                 "rule": rule_str,
                                 "support": support_both,
@@ -110,7 +114,8 @@ class BusinessRulesExtractor:
                                 "lift": lift,
                                 "antecedent": [item1],
                                 "consequent": [item2],
-                                "rule_type": "association"
+                                "rule_type": "association",
+                                "purpose": purpose
                             })
             
             # Sort by confidence
@@ -263,12 +268,16 @@ class BusinessRulesExtractor:
                             impact_level = "high" if abs(avg_target - overall_avg) > 0.2 * abs(overall_avg) else "medium"
                             explanation = f"When {col} is below {q25:.2f}, the {target_column} tends to be around {format_value(avg_target)}, which is {'significantly' if impact_level == 'high' else 'moderately'} different from the average."
                             
+                            # Purpose: Explain why this rule matters and how to apply it
+                            purpose = self._generate_rule_purpose(col, target_column, "low", impact_level, domain)
+                            
                             rules.append({
                                 "rule": f"IF {col} < {q25:.2f} THEN {target_column} ≈ {format_value(avg_target)}",
                                 "confidence": low_count / len(df) if len(df) > 0 else 0.0,
                                 "lift": avg_target / overall_avg if overall_avg != 0 else 1.0,
                                 "impact": impact_level,
-                                "explanation": explanation
+                                "explanation": explanation,
+                                "purpose": purpose
                             })
                     
                     # Rule 2: High values
@@ -292,11 +301,25 @@ class BusinessRulesExtractor:
                     if high_count > 0:
                         avg_target = high_target_sum / high_count
                         if abs(avg_target - overall_avg) > 0.1 * abs(overall_avg) if overall_avg != 0 else True:
+                            # Format currency if applicable
+                            def format_value(val):
+                                if 'salary' in target_column.lower() or 'amount' in target_column.lower() or 'bonus' in target_column.lower():
+                                    return f"₹{val:,.0f}" if val >= 1000 else f"₹{val:.2f}"
+                                return f"{val:.2f}"
+                            
+                            impact_level = "high" if abs(avg_target - overall_avg) > 0.2 * abs(overall_avg) else "medium"
+                            explanation = f"When {col} is above {q75:.2f}, the {target_column} tends to be around {format_value(avg_target)}, which is {'significantly' if impact_level == 'high' else 'moderately'} different from the average."
+                            
+                            # Purpose: Explain why this rule matters and how to apply it
+                            purpose = self._generate_rule_purpose(col, target_column, "high", impact_level, domain)
+                            
                             rules.append({
-                                "rule": f"IF {col} > {q75:.2f} THEN {target_column} ≈ {avg_target:.2f}",
+                                "rule": f"IF {col} > {q75:.2f} THEN {target_column} ≈ {format_value(avg_target)}",
                                 "confidence": high_count / len(df) if len(df) > 0 else 0.0,
                                 "lift": avg_target / overall_avg if overall_avg != 0 else 1.0,
-                                "impact": "high" if abs(avg_target - overall_avg) > 0.2 * abs(overall_avg) else "medium"
+                                "impact": impact_level,
+                                "explanation": explanation,
+                                "purpose": purpose
                             })
                 
                 except Exception as e:
@@ -352,10 +375,13 @@ class BusinessRulesExtractor:
                     if len(values) >= 4:
                         sorted_vals = sorted(values)
                         threshold = sorted_vals[3 * len(sorted_vals) // 4]
+                        purpose = f"This rule helps monitor budget overruns and financial health. When {col} exceeds {threshold:.2f}, it triggers a budget alert. You can use this to set up automated alerts, review spending patterns, and make timely adjustments to stay within budget limits."
                         rules.append({
                             "rule": f"IF {col} > {threshold:.2f} THEN budget alert",
                             "confidence": 0.6,
-                            "impact": "high"
+                            "impact": "high",
+                            "explanation": f"Expenses above {threshold:.2f} indicate potential budget concerns.",
+                            "purpose": purpose
                         })
         
         elif domain == "Sales":
@@ -375,10 +401,13 @@ class BusinessRulesExtractor:
                     if len(values) >= 4:
                         sorted_vals = sorted(values)
                         threshold = sorted_vals[len(sorted_vals) // 2]
+                        purpose = f"This rule helps identify high-value sales opportunities. When {col} exceeds {threshold:.1f}, it indicates higher sales potential. You can use this to prioritize leads, allocate sales resources effectively, and focus efforts on opportunities most likely to convert."
                         rules.append({
                             "rule": f"IF {col} > {threshold:.1f} THEN higher sales potential",
                             "confidence": 0.65,
-                            "impact": "medium"
+                            "impact": "medium",
+                            "explanation": f"Orders or quantities above {threshold:.1f} correlate with higher sales potential.",
+                            "purpose": purpose
                         })
         
         return rules
