@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Business Rule Discovery & Prediction Engine</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 AI Business Rule Discovery & Prediction Engine</h1>
+            <p class="subtitle">Automatically detect domains, train models, and extract business rules from your data</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Step 1: Upload Dataset -->
+            <section id="upload-section" class="card">
+                <h2>Step 1: Upload Dataset</h2>
+                <div class="upload-area" id="upload-area">
+                    <input type="file" id="file-input" accept=".csv,.xls,.xlsx" style="display: none;">
+                    <div class="upload-box" onclick="document.getElementById('file-input').click()">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p>Click to upload or drag and drop</p>
+                        <p class="file-types">CSV, XLS, XLSX files</p>
+                    </div>
+                    <div id="file-info" class="file-info hidden"></div>
+                </div>
+                <div id="auto-progress" class="hidden" style="margin-top: 20px;">
+                    <h3>Processing Progress</h3>
+                    <div id="progress-steps"></div>
+                </div>
+            </section>
+
+            <!-- Step 2: Dataset Info -->
+            <section id="dataset-info-section" class="card hidden">
+                <h2>Step 2: Dataset Information</h2>
+                <div id="dataset-info-content"></div>
+            </section>
+
+            <!-- Step 3: Domain Detection -->
+            <section id="domain-section" class="card hidden">
+                <h2>Step 3: Domain Detection</h2>
+                <button id="detect-domain-btn" class="btn btn-primary">Detect Domain(s)</button>
+                <div id="domain-results" class="results hidden"></div>
+            </section>
+
+            <!-- Step 4: Preprocessing -->
+            <section id="preprocess-section" class="card hidden">
+                <h2>Step 4: Data Preprocessing</h2>
+                <div class="form-group">
+                    <label for="domain-select">Select Domain:</label>
+                    <select id="domain-select" class="form-control">
+                        <option value="">Select a domain...</option>
+                    </select>
+                </div>
+                <button id="preprocess-btn" class="btn btn-primary">Preprocess Data</button>
+                <div id="preprocess-results" class="results hidden"></div>
+            </section>
+
+            <!-- Step 5: Train Model -->
+            <section id="train-section" class="card hidden">
+                <h2>Step 5: Train Prediction Model</h2>
+                <div class="form-group">
+                    <label for="target-column">Target Column (what to predict):</label>
+                    <select id="target-column" class="form-control">
+                        <option value="">Select target column...</option>
+                    </select>
+                </div>
+                <button id="train-btn" class="btn btn-primary">Train Model</button>
+                <div id="train-results" class="results hidden"></div>
+            </section>
+
+            <!-- Step 6: Model Explainability -->
+            <section id="explain-section" class="card hidden">
+                <h2>Step 6: Model Explainability</h2>
+                <button id="explain-btn" class="btn btn-primary">Generate Explanations</button>
+                <div id="explain-results" class="results hidden"></div>
+            </section>
+
+            <!-- Step 7: Business Rules -->
+            <section id="rules-section" class="card hidden">
+                <h2>Step 7: Extract Business Rules</h2>
+                <div class="form-group">
+                    <label for="min-support">Min Support:</label>
+                    <input type="number" id="min-support" class="form-control" value="0.1" min="0" max="1" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label for="min-confidence">Min Confidence:</label>
+                    <input type="number" id="min-confidence" class="form-control" value="0.5" min="0" max="1" step="0.1">
+                </div>
+                <button id="extract-rules-btn" class="btn btn-primary">Extract Rules</button>
+                <div id="rules-results" class="results hidden"></div>
+            </section>
+
+            <!-- Step 8: Generate Report -->
+            <section id="report-section" class="card hidden">
+                <h2>Step 8: Generate Report</h2>
+                <button id="generate-report-btn" class="btn btn-primary">Generate Comprehensive Report</button>
+                <div id="report-results" class="results hidden"></div>
+            </section>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+    </div>
+
+    <script>
+        // Immediately hide loading overlay on page load
+        (function() {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                overlay.classList.add('hidden');
+                overlay.style.display = 'none';
+            }
+        })();
+    </script>
+    <script src="/app.js"></script>
+</body>
+</html>
+
