@@ -1,0 +1,498 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+    padding: 20px;
+    color: #333;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Header */
+header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.header-content h1 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.header-content .icon {
+    font-size: 1.2em;
+}
+
+.subtitle {
+    font-size: 1.1em;
+    opacity: 0.95;
+    margin-top: 10px;
+}
+
+/* Card Styles */
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.card h3 {
+    color: #667eea;
+    margin-bottom: 20px;
+    font-size: 1.3em;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 10px;
+}
+
+/* Upload Section */
+.upload-section {
+    margin-bottom: 30px;
+}
+
+.upload-area {
+    margin-top: 20px;
+}
+
+.upload-box {
+    border: 3px dashed #667eea;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: #f8f9ff;
+}
+
+.upload-box:hover {
+    background: #eef0ff;
+    border-color: #764ba2;
+}
+
+.upload-box svg {
+    color: #667eea;
+    margin-bottom: 15px;
+}
+
+.upload-box p {
+    margin: 10px 0;
+    font-size: 1.1em;
+    color: #555;
+}
+
+.file-types {
+    font-size: 0.9em;
+    color: #888;
+}
+
+.file-info {
+    margin-top: 20px;
+    padding: 15px;
+    background: #e8f5e9;
+    border-radius: 8px;
+    border-left: 4px solid #4caf50;
+}
+
+/* Dashboard Layout */
+.dashboard-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.top-row {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.middle-row {
+    grid-column: 1 / -1;
+}
+
+.bottom-row {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.additional-section {
+    grid-column: 1 / -1;
+}
+
+/* Input Summary Card */
+.input-summary-card {
+    height: 100%;
+}
+
+.employee-info {
+    margin-bottom: 20px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.info-item .label {
+    font-weight: 600;
+    color: #666;
+}
+
+.info-item .value {
+    color: #333;
+    font-weight: 500;
+}
+
+.features-section {
+    margin: 20px 0;
+}
+
+.features-section h4 {
+    color: #555;
+    margin-bottom: 10px;
+    font-size: 1em;
+}
+
+.features-list {
+    margin-left: 20px;
+    line-height: 1.8;
+}
+
+.features-list li {
+    margin: 5px 0;
+    color: #555;
+}
+
+.checkbox-section {
+    margin: 20px 0;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* Business Rules Table */
+.business-rules-card {
+    height: 100%;
+}
+
+.table-container {
+    overflow-x: auto;
+    margin-top: 15px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background: #667eea;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+td {
+    font-size: 0.9em;
+}
+
+tr:hover {
+    background: #f5f5f5;
+}
+
+/* Insights */
+.insights-list {
+    list-style: none;
+    padding: 0;
+}
+
+.insights-list li {
+    padding: 12px;
+    margin: 8px 0;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #4caf50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.insights-list li.warning {
+    border-left-color: #ff9800;
+}
+
+.insights-list li::before {
+    content: "✓";
+    color: #4caf50;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.insights-list li.warning::before {
+    content: "⚠";
+    color: #ff9800;
+}
+
+/* Recommendations */
+.recommendations-list {
+    list-style: none;
+    padding: 0;
+}
+
+.recommendations-list li {
+    padding: 12px;
+    margin: 8px 0;
+    background: #f8f9fa;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.recommendations-list li::before {
+    content: "📄";
+    font-size: 1.2em;
+}
+
+.recommendations-list li.action::before {
+    content: "🔧";
+}
+
+/* Prediction Card */
+.prediction-card {
+    height: 100%;
+}
+
+.prediction-content {
+    text-align: center;
+}
+
+.similarity-badge {
+    display: inline-block;
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 8px 16px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.prediction-box {
+    background: #ffebee;
+    border: 2px solid #f44336;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.prediction-box.low {
+    background: #e8f5e9;
+    border-color: #4caf50;
+}
+
+.prediction-box.medium {
+    background: #fff3e0;
+    border-color: #ff9800;
+}
+
+.warning-icon {
+    font-size: 1.5em;
+}
+
+.prediction-text {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #f44336;
+}
+
+.prediction-box.low .prediction-text {
+    color: #4caf50;
+}
+
+.prediction-box.medium .prediction-text {
+    color: #ff9800;
+}
+
+.prediction-description {
+    margin: 20px 0;
+    color: #666;
+    line-height: 1.6;
+    text-align: left;
+}
+
+.confidence-section {
+    margin: 30px 0;
+}
+
+.confidence-label {
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #555;
+}
+
+.confidence-bar-container {
+    position: relative;
+}
+
+.confidence-bar {
+    width: 100%;
+    height: 30px;
+    background: #e0e0e0;
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+}
+
+.confidence-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f44336 0%, #ff9800 50%, #4caf50 100%);
+    border-radius: 15px;
+    transition: width 0.5s ease;
+}
+
+.confidence-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+    font-size: 0.85em;
+    color: #666;
+}
+
+/* Buttons */
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 10px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    color: white;
+}
+
+.loading-overlay.hidden {
+    display: none !important;
+}
+
+.spinner {
+    border: 4px solid rgba(255,255,255,0.3);
+    border-top: 4px solid white;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .dashboard-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .top-row,
+    .bottom-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 1.8em;
+    }
+    
+    .card {
+        padding: 15px;
+    }
+    
+    .prediction-box {
+        padding: 15px;
+    }
+    
+    .prediction-text {
+        font-size: 1.2em;
+    }
+}
+

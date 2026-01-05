@@ -102,7 +102,8 @@ class BusinessRulesExtractor:
                         lift = confidence / support_item2 if support_item2 > 0 else 0.0
                         
                         if confidence >= min_confidence and support_both >= min_support:
-                            rule_str = f"IF {item1} THEN {item2}"
+                            # Format rule in user-friendly way
+                            rule_str = self._format_rule_string(item1, item2)
                             rules_list.append({
                                 "rule": rule_str,
                                 "support": support_both,
@@ -171,6 +172,55 @@ class BusinessRulesExtractor:
                                 pass
         
         return df_discretized
+    
+    def _format_rule_string(self, item1: str, item2: str) -> str:
+        """Format rule string to be more user-readable"""
+        # Extract column and value from item strings (format: "column=value")
+        def parse_item(item_str):
+            if '=' in item_str:
+                parts = item_str.split('=', 1)
+                return parts[0].strip(), parts[1].strip()
+            return item_str, None
+        
+        col1, val1 = parse_item(item1)
+        col2, val2 = parse_item(item2)
+        
+        # Format in user-friendly way
+        # Example: "IF Leave Count = High THEN Attrition = High"
+        if val1 and val2:
+            return f"IF {col1} = {val1} THEN {col2} = {val2}"
+        elif val1:
+            return f"IF {col1} = {val1} THEN {col2}"
+        elif val2:
+            return f"IF {col1} THEN {col2} = {val2}"
+        else:
+            return f"IF {col1} THEN {col2}"
+    
+    def _format_if_then_rule(self, col: str, threshold: float, target_col: str, target_val: float, operator: str) -> str:
+        """Format if-then rule in user-friendly way"""
+        # Convert numeric values to categories for better readability
+        col_lower = col.lower()
+        target_lower = target_col.lower()
+        
+        # Format threshold based on column type
+        if 'age' in col_lower:
+            threshold_str = f"{threshold:.0f}"
+        elif 'count' in col_lower or 'leave' in col_lower:
+            threshold_str = f"{threshold:.0f}"
+        else:
+            threshold_str = f"{threshold:.2f}"
+        
+        # Format target value
+        if 'attrition' in target_lower or 'risk' in target_lower:
+            if target_val > 0.7:
+                target_str = "High"
+            elif target_val > 0.4:
+                target_str = "Medium"
+            else:
+                target_str = "Low"
+            return f"IF {col} {operator} {threshold_str} THEN {target_col} = {target_str}"
+        else:
+            return f"IF {col} {operator} {threshold_str} THEN {target_col} = {target_val:.2f}"
     
     def _extract_if_then_rules(self, df, domain: str, target_column: str = None) -> List[Dict[str, Any]]:
         """Extract if-then rules from data patterns - Pure Python"""
@@ -254,8 +304,11 @@ class BusinessRulesExtractor:
                     if low_count > 0:
                         avg_target = low_target_sum / low_count
                         if abs(avg_target - overall_avg) > 0.1 * abs(overall_avg) if overall_avg != 0 else True:
+                            # Format rule in user-friendly way
+                            rule_str = self._format_if_then_rule(col, q25, target_column, avg_target, "<")
                             rules.append({
-                                "rule": f"IF {col} < {q25:.2f} THEN {target_column} ≈ {avg_target:.2f}",
+                                "rule": rule_str,
+                                "support": low_count / len(df) if len(df) > 0 else 0.0,
                                 "confidence": low_count / len(df) if len(df) > 0 else 0.0,
                                 "lift": avg_target / overall_avg if overall_avg != 0 else 1.0,
                                 "impact": "high" if abs(avg_target - overall_avg) > 0.2 * abs(overall_avg) else "medium"
@@ -282,8 +335,11 @@ class BusinessRulesExtractor:
                     if high_count > 0:
                         avg_target = high_target_sum / high_count
                         if abs(avg_target - overall_avg) > 0.1 * abs(overall_avg) if overall_avg != 0 else True:
+                            # Format rule in user-friendly way
+                            rule_str = self._format_if_then_rule(col, q75, target_column, avg_target, ">")
                             rules.append({
-                                "rule": f"IF {col} > {q75:.2f} THEN {target_column} ≈ {avg_target:.2f}",
+                                "rule": rule_str,
+                                "support": high_count / len(df) if len(df) > 0 else 0.0,
                                 "confidence": high_count / len(df) if len(df) > 0 else 0.0,
                                 "lift": avg_target / overall_avg if overall_avg != 0 else 1.0,
                                 "impact": "high" if abs(avg_target - overall_avg) > 0.2 * abs(overall_avg) else "medium"

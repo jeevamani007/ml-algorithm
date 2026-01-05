@@ -51,6 +51,20 @@ if frontend_path.exists():
         if js_file.exists():
             return FileResponse(str(js_file), media_type="application/javascript")
         raise HTTPException(status_code=404, detail="JS file not found")
+    
+    @app.get("/dashboard.css")
+    async def get_dashboard_css():
+        css_file = frontend_path / "dashboard.css"
+        if css_file.exists():
+            return FileResponse(str(css_file), media_type="text/css")
+        raise HTTPException(status_code=404, detail="Dashboard CSS file not found")
+    
+    @app.get("/dashboard.js")
+    async def get_dashboard_js():
+        js_file = frontend_path / "dashboard.js"
+        if js_file.exists():
+            return FileResponse(str(js_file), media_type="application/javascript")
+        raise HTTPException(status_code=404, detail="Dashboard JS file not found")
 
 # Global storage for processed data
 processed_data_store: Dict[str, Any] = {}
@@ -70,6 +84,17 @@ async def root():
         "frontend_path": str(frontend_path),
         "exists": frontend_path.exists()
     })
+
+@app.get("/dashboard")
+async def dashboard():
+    """Serve the dashboard HTML file"""
+    dashboard_file = frontend_path / "dashboard.html"
+    if dashboard_file.exists():
+        return FileResponse(
+            str(dashboard_file),
+            media_type="text/html"
+        )
+    raise HTTPException(status_code=404, detail="Dashboard not found")
 
 @app.get("/api")
 async def api_info():

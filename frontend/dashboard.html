@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Rules & Predict Outcomes</title>
+    <link rel="stylesheet" href="/dashboard.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <h1>
+                    <span class="icon">🔍</span>
+                    Business Rules & Predict Outcomes
+                </h1>
+                <p class="subtitle">Using HR data from the last 3 months, here are key rules detected and personalized predictions.</p>
+            </div>
+        </header>
+
+        <!-- Data Upload Section -->
+        <section class="upload-section card">
+            <h2>📤 Upload HR Data</h2>
+            <div class="upload-area">
+                <input type="file" id="file-input" accept=".csv,.xls,.xlsx" style="display: none;">
+                <div class="upload-box" onclick="document.getElementById('file-input').click()">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p>Click to upload or drag and drop</p>
+                    <p class="file-types">CSV, XLS, XLSX files</p>
+                </div>
+                <div id="file-info" class="file-info hidden"></div>
+            </div>
+        </section>
+
+        <!-- Main Dashboard Content -->
+        <div id="dashboard-content" class="dashboard-content hidden">
+            <!-- Top Row: Input Data Summary and Business Rules -->
+            <div class="top-row">
+                <!-- Left: Input Data Summary -->
+                <div class="left-column">
+                    <div class="card input-summary-card">
+                        <h3>Input Data Summary</h3>
+                        <div id="employee-info" class="employee-info">
+                            <div class="info-item">
+                                <span class="label">Name:</span>
+                                <span id="emp-name" class="value">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Age:</span>
+                                <span id="emp-age" class="value">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Leave Count:</span>
+                                <span id="emp-leave" class="value">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Employee ID:</span>
+                                <span id="emp-id" class="value">-</span>
+                            </div>
+                        </div>
+                        
+                        <div class="features-section">
+                            <h4>Features used</h4>
+                            <ol id="features-list" class="features-list">
+                                <!-- Features will be populated here -->
+                            </ol>
+                        </div>
+                        
+                        <div class="checkbox-section">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="use-3months" checked disabled>
+                                <span>Using 3 months of HR Data</span>
+                            </label>
+                        </div>
+                        
+                        <button class="btn btn-primary" id="update-data-btn" onclick="updateEmployeeData()">Update Data</button>
+                    </div>
+                </div>
+
+                <!-- Right: Key Business Rules -->
+                <div class="right-column">
+                    <div class="card business-rules-card">
+                        <h3>Key Business Rules</h3>
+                        <div class="table-container">
+                            <table id="rules-table">
+                                <thead>
+                                    <tr>
+                                        <th>Rule</th>
+                                        <th>Support</th>
+                                        <th>Confidence</th>
+                                        <th>Lift</th>
+                                        <th>Purpose</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rules-tbody">
+                                    <!-- Rules will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Row: Insights -->
+            <div class="middle-row">
+                <div class="card insights-card">
+                    <h3>Insights</h3>
+                    <ul id="insights-list" class="insights-list">
+                        <!-- Insights will be populated here -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Bottom Row: Recommendations and Predicted Outcome -->
+            <div class="bottom-row">
+                <!-- Left: Recommendations -->
+                <div class="left-column">
+                    <div class="card recommendations-card">
+                        <h3>Recommendations</h3>
+                        <ul id="recommendations-list" class="recommendations-list">
+                            <!-- Recommendations will be populated here -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Right: Predicted Outcome -->
+                <div class="right-column">
+                    <div class="card prediction-card">
+                        <h3>Predicted Outcome</h3>
+                        <div class="prediction-content">
+                            <div class="similarity-badge">
+                                <span>Similarity: <span id="similarity-value">85%</span></span>
+                            </div>
+                            
+                            <div id="prediction-box" class="prediction-box">
+                                <span class="warning-icon">⚠️</span>
+                                <span id="prediction-text" class="prediction-text">ATTRITION HIGH</span>
+                            </div>
+                            
+                            <p id="prediction-description" class="prediction-description">
+                                <!-- Description will be populated here -->
+                            </p>
+                            
+                            <div class="confidence-section">
+                                <div class="confidence-label">
+                                    <span>Confidence: <span id="confidence-value">85%</span></span>
+                                </div>
+                                <div class="confidence-bar-container">
+                                    <div class="confidence-bar">
+                                        <div class="confidence-fill" id="confidence-fill" style="width: 85%"></div>
+                                    </div>
+                                    <div class="confidence-labels">
+                                        <span class="low-label">Low</span>
+                                        <span class="high-label">High</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-primary" id="detailed-report-btn" onclick="showDetailedReport()">See Detailed Report</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Input Section (Bottom Left) -->
+            <div class="additional-section">
+                <div class="card additional-input-card">
+                    <h3>Input Detected</h3>
+                    <ol id="additional-features-list" class="features-list">
+                        <!-- Features will be populated here -->
+                    </ol>
+                    <div class="checkbox-section">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="use-3months-2" checked disabled>
+                            <span>Using 3 months of HR Data</span>
+                        </label>
+                    </div>
+                    <button class="btn btn-primary" id="further-analysis-btn" onclick="getFurtherAnalysis()">Get Further Analysis</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+    </div>
+
+    <script src="/dashboard.js"></script>
+</body>
+</html>
+
