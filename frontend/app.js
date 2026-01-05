@@ -158,6 +158,26 @@ async function processAutomatically(uploadData) {
         currentDomain = domainData.primary_domain || domainData.detected_domains[0]?.domain || 'General';
         updateProgressStep('detect', `Domain detected: ${currentDomain}`, false, true);
         
+        // Step 1.5: Analyze Columns
+        let columnAnalysisData = null;
+        try {
+            updateProgressStep('analyze', 'Analyzing column purposes...', true);
+            const analyzeResponse = await fetch(`${API_BASE_URL}/analyze-columns`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dataset_id: currentDatasetId, domain: currentDomain })
+            });
+            columnAnalysisData = await analyzeResponse.json();
+            if (analyzeResponse.ok) {
+                updateProgressStep('analyze', `Analyzed ${columnAnalysisData.total_columns} columns`, false, true);
+            } else {
+                updateProgressStep('analyze', 'Column analysis skipped (optional)', false, true);
+            }
+        } catch (e) {
+            console.warn('Column analysis skipped:', e);
+            updateProgressStep('analyze', 'Column analysis skipped (optional)', false, true);
+        }
+        
         // Step 2: Preprocess
         updateProgressStep('preprocess', 'Preprocessing data...', true);
         const preprocessResponse = await fetch(`${API_BASE_URL}/preprocess`, {
@@ -285,7 +305,7 @@ async function processAutomatically(uploadData) {
         // Display all results
         hideLoading();
         hideProgress();
-        displayAutomaticResults(uploadData, domainData, preprocessData, trainData, explainData, rulesData, reportData);
+        displayAutomaticResults(uploadData, domainData, preprocessData, trainData, explainData, rulesData, reportData, columnAnalysisData);
         
     } catch (error) {
         hideLoading();
@@ -297,7 +317,7 @@ async function processAutomatically(uploadData) {
     }
 }
 
-function displayAutomaticResults(uploadData, domainData, preprocessData, trainData, explainData, rulesData, reportData) {
+function displayAutomaticResults(uploadData, domainData, preprocessData, trainData, explainData, rulesData, reportData, columnAnalysisData) {
     const resultsSection = document.createElement('section');
     resultsSection.className = 'card';
     resultsSection.id = 'auto-results-section';
@@ -309,8 +329,55 @@ function displayAutomaticResults(uploadData, domainData, preprocessData, trainDa
             <p>All steps completed successfully. Review the results below.</p>
         </div>
         
+        <!-- Column Analysis & Purposes -->
+        ${columnAnalysisData && columnAnalysisData.columns ? `
+        <h3 style="margin-top: 20px;">1. Column Analysis & Purposes</h3>
+        <div class="results">
+            <p style="margin-bottom: 15px;"><strong>Understanding Your Data:</strong> Each column in your dataset has been analyzed to explain its purpose and how it's used in the analysis.</p>
+            <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Column Name</th>
+                            <th>Purpose</th>
+                            <th>Category</th>
+                            <th>Data Type</th>
+                            <th>Usage in Analysis</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Object.values(columnAnalysisData.columns).map(col => `
+                            <tr>
+                                <td><strong>${col.column_name}</strong></td>
+                                <td>${col.purpose}</td>
+                                <td><span class="domain-badge">${col.category}</span></td>
+                                <td>${col.data_type}</td>
+                                <td style="font-size: 0.9em; color: #666;">${col.usage_in_analysis || 'Used as a feature in analysis'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            ${Object.values(columnAnalysisData.columns).slice(0, 3).map(col => `
+                <div class="insight-item" style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                    <h4 style="margin: 0 0 8px 0; color: #667eea;">${col.column_name}</h4>
+                    <p style="margin: 5px 0;"><strong>Purpose:</strong> ${col.purpose}</p>
+                    ${col.business_context ? `<p style="margin: 5px 0; color: #555;"><strong>Business Context:</strong> ${col.business_context}</p>` : ''}
+                    ${col.statistics && col.statistics.mean !== undefined ? `
+                        <p style="margin: 5px 0; font-size: 0.9em; color: #666;">
+                            <strong>Statistics:</strong> 
+                            Mean: ${col.statistics.mean.toFixed(2)}, 
+                            Min: ${col.statistics.min.toFixed(2)}, 
+                            Max: ${col.statistics.max.toFixed(2)}
+                        </p>
+                    ` : ''}
+                </div>
+            `).join('')}
+        </div>
+        ` : ''}
+        
         <!-- Domain Detection -->
-        <h3 style="margin-top: 20px;">1. Domain Detection</h3>
+        <h3 style="margin-top: 20px;">${columnAnalysisData ? '2' : '1'}. Domain Detection</h3>
         <div class="results">
             <div class="table-container">
                 <table>
@@ -341,7 +408,7 @@ function displayAutomaticResults(uploadData, domainData, preprocessData, trainDa
         </div>
         
         <!-- Preprocessed Dataset Sample -->
-        <h3 style="margin-top: 30px;">2. Preprocessed Dataset Sample</h3>
+        <h3 style="margin-top: 30px;">${columnAnalysisData ? '3' : '2'}. Preprocessed Dataset Sample</h3>
         <div class="results">
             ${preprocessData && preprocessData.sample_data ? `
                 <div class="table-container">
@@ -364,7 +431,20 @@ function displayAutomaticResults(uploadData, domainData, preprocessData, trainDa
         </div>
         
         <!-- Model Performance & Predictions -->
-        <h3 style="margin-top: 30px;">3. Model Performance & Sample Predictions</h3>
+        <h3 style="margin-top: 30px;">${columnAnalysisData ? '4' : '3'}. Model Performance & Sample Predictions</h3>
+        <div class="results">
+            <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+                <h4 style="margin: 0 0 10px 0; color: #1976d2;">🤖 ML Algorithm Explanation</h4>
+                <p style="margin: 5px 0;"><strong>Model Type:</strong> ${trainData.model_type}</p>
+                <p style="margin: 5px 0;"><strong>How It Works:</strong> 
+                    ${trainData.model_type.includes('classifier') 
+                        ? 'This is a rule-based classification model. It learns patterns from your data by identifying thresholds and conditions that best separate different classes. For example, it might learn that "IF leave_count > 5 THEN attrition = High". The model combines multiple such rules to make predictions with confidence scores.'
+                        : 'This is a rule-based regression model. It learns relationships between features and the target variable by calculating weighted contributions from each feature. The model predicts numeric values (like salary amounts or sales figures) based on patterns it discovered in your data.'}
+                </p>
+                <p style="margin: 5px 0;"><strong>Why This Model:</strong> 
+                    Rule-based models are chosen because they are <strong>explainable</strong> - you can understand exactly why a prediction was made. Unlike "black box" models, every prediction can be traced back to specific business rules extracted from your data.
+                </p>
+            </div>
         <div class="results">
             <p><strong>Model Type:</strong> ${trainData.model_type}</p>
             <p><strong>Target Column:</strong> ${trainData.target_column}</p>
@@ -405,7 +485,7 @@ function displayAutomaticResults(uploadData, domainData, preprocessData, trainDa
         </div>
         
         <!-- Feature Impact Table -->
-        <h3 style="margin-top: 30px;">4. Feature Impact Analysis</h3>
+        <h3 style="margin-top: 30px;">${columnAnalysisData ? '5' : '4'}. Feature Impact Analysis</h3>
         <div class="results">
             ${explainData && explainData.feature_impact_table && explainData.feature_impact_table.length > 0 ? `
                 <div class="table-container">
@@ -452,7 +532,15 @@ function displayAutomaticResults(uploadData, domainData, preprocessData, trainDa
         </div>
         
         <!-- Business Rules -->
-        <h3 style="margin-top: 30px;">5. Business Rules</h3>
+        <h3 style="margin-top: 30px;">${columnAnalysisData ? '6' : '5'}. Business Rules</h3>
+        <div class="results">
+            <div style="background: #fff3e0; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+                <h4 style="margin: 0 0 10px 0; color: #f57c00;">📋 Understanding Business Rules</h4>
+                <p style="margin: 5px 0;"><strong>What are Business Rules?</strong> These are patterns discovered in your data that describe relationships between different columns. For example, "IF leave_count is High THEN attrition is High" tells you that employees with many leave days are more likely to leave.</p>
+                <p style="margin: 5px 0;"><strong>Support:</strong> How often this pattern appears in your data (higher = more common).</p>
+                <p style="margin: 5px 0;"><strong>Confidence:</strong> How reliable this rule is (higher = more trustworthy).</p>
+                <p style="margin: 5px 0;"><strong>Lift:</strong> How much stronger this pattern is compared to random chance (lift > 1 means it's a meaningful pattern).</p>
+            </div>
         <div class="results">
             <h4>Association Rules (Apriori Algorithm):</h4>
             ${rulesData && rulesData.association_rules && rulesData.association_rules.length > 0 ? 
@@ -511,7 +599,7 @@ function displayAutomaticResults(uploadData, domainData, preprocessData, trainDa
         </div>
         
         <!-- Report Summary -->
-        <h3 style="margin-top: 30px;">6. Summary Report & Recommendations</h3>
+        <h3 style="margin-top: 30px;">${columnAnalysisData ? '7' : '6'}. Summary Report & Recommendations</h3>
         <div class="results">
             ${reportData && reportData.sections ? `
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">

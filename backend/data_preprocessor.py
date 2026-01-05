@@ -30,6 +30,10 @@ class DataPreprocessor:
         # 4. Normalize/Scale if needed (pure Python)
         df_processed, scaling_info = self._normalize_data(df_processed, domain)
         preprocessing_info["operations"].append(scaling_info)
+
+        # 5. Silent feature engineering (domain-aware, formulas not exposed)
+        df_processed, fe_info = self._feature_engineering(df_processed, domain)
+        preprocessing_info["operations"].append(fe_info)
         
         preprocessing_info["final_shape"] = (len(df_processed), len(df_processed.columns))
         preprocessing_info["columns"] = list(df_processed.columns)
@@ -266,4 +270,114 @@ class DataPreprocessor:
                     info["normalized_columns"].append(col)
                     info["method"] = "min_max_scaling"
         
+        return df, info
+
+    def _feature_engineering(self, df, domain: str) -> Tuple[Any, Dict[str, Any]]:
+        """
+        Create additional, business-friendly metrics silently.
+
+        The goal is to enrich the dataset with derived signals such as:
+        - Attendance percentage
+        - Salary per month / per year
+        - Experience in years
+        - Simple calendar features for trend analysis (month / year)
+
+        Formulas are intentionally not exposed to the outside world; only the
+        presence of engineered features is recorded in the metadata.
+        """
+        info: Dict[str, Any] = {
+            "operation": "feature_engineering",
+            "engineered_features": [],
+            "domain": domain
+        }
+
+        # 1. Attendance-related features
+        try:
+            cols_lower = {col.lower(): col for col in df.columns}
+            present_candidates = [c for c in df.columns if "present" in c.lower()]
+            total_candidates = [c for c in df.columns if "total" in c.lower() or "working_days" in c.lower()]
+
+            if present_candidates and total_candidates:
+                present_col = present_candidates[0]
+                total_col = total_candidates[0]
+                new_col = "attendance_percentage"
+                try:
+                    # Use vectorized operations when possible
+                    df[new_col] = (df[present_col].astype("float64") / df[total_col].astype("float64")).clip(lower=0, upper=1) * 100.0
+                    info["engineered_features"].append(new_col)
+                except Exception:
+                    # Fall back to row-wise safe computation
+                    values = []
+                    for idx in range(len(df)):
+                        try:
+                            pres = float(df.iloc[idx][present_col])
+                            tot = float(df.iloc[idx][total_col])
+                            if tot > 0:
+                                values.append(max(0.0, min(100.0, (pres / tot) * 100.0)))
+                            else:
+                                values.append(0.0)
+                        except Exception:
+                            values.append(0.0)
+                    df[new_col] = values
+                    info["engineered_features"].append(new_col)
+        except Exception:
+            # Best-effort only – failures here should never break preprocessing
+            pass
+
+        # 2. Salary per month / year (HR / Finance heavy)
+        try:
+            salary_cols = [c for c in df.columns if "salary" in c.lower() or "ctc" in c.lower() or "compensation" in c.lower()]
+            for col in salary_cols:
+                name_lower = col.lower()
+                if "annual" in name_lower or "year" in name_lower:
+                    new_col = f"{col}_per_month"
+                    try:
+                        df[new_col] = (df[col].astype("float64") / 12.0)
+                        info["engineered_features"].append(new_col)
+                    except Exception:
+                        continue
+                elif "month" in name_lower or "monthly" in name_lower:
+                    new_col = f"{col}_per_year"
+                    try:
+                        df[new_col] = (df[col].astype("float64") * 12.0)
+                        info["engineered_features"].append(new_col)
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+
+        # 3. Experience in years (HR / General)
+        try:
+            exp_cols = [c for c in df.columns if "experience" in c.lower() or "tenure" in c.lower() or "years_in_company" in c.lower()]
+            for col in exp_cols:
+                name_lower = col.lower()
+                if "month" in name_lower:
+                    new_col = f"{col}_years"
+                    try:
+                        df[new_col] = (df[col].astype("float64") / 12.0)
+                        info["engineered_features"].append(new_col)
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+
+        # 4. Calendar / trend features from date-like columns
+        try:
+            import pandas as pd  # Local import to avoid hard dependency elsewhere
+
+            date_cols = [c for c in df.columns if "date" in c.lower() or "timestamp" in c.lower()]
+            for col in date_cols:
+                try:
+                    dt_series = pd.to_datetime(df[col], errors="coerce")
+                    if dt_series.notna().any():
+                        month_col = f"{col}_month"
+                        year_col = f"{col}_year"
+                        df[month_col] = dt_series.dt.month
+                        df[year_col] = dt_series.dt.year
+                        info["engineered_features"].extend([month_col, year_col])
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
         return df, info

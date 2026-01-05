@@ -17,6 +17,7 @@ from model_trainer import ModelTrainer
 from explainability import ExplainabilityEngine
 from business_rules import BusinessRulesExtractor
 from report_generator import ReportGenerator
+from column_analyzer import ColumnAnalyzer
 
 app = FastAPI(title="AI Business Rule Discovery & Prediction Engine")
 
@@ -598,6 +599,46 @@ async def get_dataset_columns(dataset_id: str, domain: Optional[str] = None):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting columns: {str(e)}")
+
+@app.post("/analyze-columns")
+async def analyze_columns(request_data: Dict[str, Any] = Body(...)):
+    """Analyze columns and generate purpose explanations"""
+    try:
+        dataset_id = request_data.get("dataset_id")
+        domain = request_data.get("domain")
+        
+        if not dataset_id:
+            raise HTTPException(status_code=400, detail="dataset_id is required")
+        
+        if dataset_id not in processed_data_store:
+            raise HTTPException(status_code=404, detail="Dataset not found")
+        
+        data = processed_data_store[dataset_id]
+        
+        # Use preprocessed data if available, otherwise raw data
+        if domain and "preprocessed_data" in data and domain in data.get("preprocessed_data", {}):
+            df = data["preprocessed_data"][domain]["data"]
+        else:
+            df = data["raw_data"]
+        
+        analyzer = ColumnAnalyzer()
+        analysis = analyzer.analyze_columns(df, domain)
+        
+        # Store column analysis
+        if "column_analysis" not in processed_data_store[dataset_id]:
+            processed_data_store[dataset_id]["column_analysis"] = {}
+        
+        processed_data_store[dataset_id]["column_analysis"][domain or "raw"] = analysis
+        
+        return JSONResponse(content=analysis)
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        error_detail = f"Error analyzing columns: {str(e)}"
+        print(f"Column analysis error: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=error_detail)
 
 @app.get("/dataset/{dataset_id}/suggest-target")
 async def suggest_target_column(dataset_id: str, domain: Optional[str] = None):

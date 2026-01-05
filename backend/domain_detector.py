@@ -1,9 +1,14 @@
 from typing import List, Dict, Any
 
 class DomainDetector:
-    """Detects domain(s) of a dataset based on column names and data types - Pure Python"""
+    """Detects domain(s) of a dataset based on column names and data types - Pure Python.
+
+    NOTE: Public consumers of this class should treat the supported domains as:
+    HR, Finance, Sales, Education, General.
+    Any internal / legacy domains will be mapped into this set.
+    """
     
-    # Domain-specific keywords
+    # Domain-specific keywords (internal)
     DOMAIN_KEYWORDS = {
         "HR": [
             "employee", "emp", "staff", "worker", "attrition", "leave", "absence",
@@ -23,12 +28,20 @@ class DomainDetector:
             "demand", "forecast", "target", "quota", "pipeline", "opportunity",
             "conversion", "lead", "deal", "contract", "subscription"
         ],
+        # Operations will be mapped to General in the public output
         "Operations": [
             "operation", "process", "efficiency", "throughput", "capacity", "utilization",
             "inventory", "stock", "supply", "demand", "warehouse", "logistics",
             "delivery", "shipping", "production", "manufacturing", "quality", "defect",
             "maintenance", "downtime", "cycle_time", "lead_time"
-        ]
+        ],
+        # Education domain support (mapped to "Education" in public results)
+        "Education": [
+            "student", "pupil", "learner", "rollno", "roll_no", "admission",
+            "grade", "class", "section", "semester", "course", "subject",
+            "attendance", "marks", "score", "gpa", "cgpa", "exam", "test",
+            "assignment", "teacher", "faculty", "department", "batch"
+        ],
     }
     
     def detect_domains(self, df) -> List[Dict[str, Any]]:
@@ -69,11 +82,19 @@ class DomainDetector:
         # Get row count using pure Python
         row_count = len(df)
         
-        # Format results
+        # Helper to map internal domain names to the public, constrained set
+        def _public_domain_name(internal_domain: str) -> str:
+            if internal_domain in ("HR", "Finance", "Sales", "Education"):
+                return internal_domain
+            # Any other internal domains are surfaced as General
+            return "General"
+        
+        # Format results (using only the allowed public domain labels)
         detected_domains = []
-        for domain, info in sorted_domains:
+        for internal_domain, info in sorted_domains:
+            public_domain = _public_domain_name(internal_domain)
             detected_domains.append({
-                "domain": domain,
+                "domain": public_domain,
                 "confidence": round(info["confidence"], 3),
                 "score": info["score"],
                 "matched_columns": info["matched_columns"],

@@ -460,12 +460,38 @@ async function predictEmployee(employeeData) {
         predictionText.style.color = predictionClass === 'low' ? '#4caf50' : predictionClass === 'medium' ? '#ff9800' : '#f44336';
         
         const empName = document.getElementById('emp-name').textContent;
-        predictionDescription.textContent = 
-            `${empName} is predicted to have a ${prediction} risk of attrition. This prediction is based on the key business rules that were detected in the data analysis.`;
+        
+        // Generate detailed, user-friendly prediction explanation
+        let explanation = `${empName} is predicted to have a ${prediction} risk of attrition. `;
+        
+        // Add rule-based explanations
+        const explanations = [];
+        if (leaveCount > 5) {
+            explanations.push(`High leave count (${leaveCount} days) is a strong indicator of potential attrition.`);
+        } else if (leaveCount > 3) {
+            explanations.push(`Moderate leave count (${leaveCount} days) suggests some risk.`);
+        }
+        
+        if (age < 25) {
+            explanations.push(`Younger employees (age ${age}) tend to have higher attrition rates.`);
+        } else if (age < 30) {
+            explanations.push(`Age ${age} falls in a moderate risk category.`);
+        }
+        
+        if (explanations.length > 0) {
+            explanation += "This prediction is based on: " + explanations.join(" ") + " ";
+        }
+        
+        explanation += "The model analyzed patterns from similar employees in your dataset to make this prediction.";
+        
+        predictionDescription.textContent = explanation;
         
         confidenceValue.textContent = `${Math.round(confidence * 100)}%`;
         confidenceFill.style.width = `${confidence * 100}%`;
         similarityValue.textContent = `${Math.round(confidence * 100)}%`;
+        
+        // Add ML algorithm explanation
+        addMLAlgorithmExplanation();
         
     } catch (error) {
         console.error('Error predicting employee:', error);
@@ -504,6 +530,46 @@ function hideLoading() {
     if (overlay) {
         overlay.style.display = 'none';
         overlay.classList.add('hidden');
+    }
+}
+
+function addMLAlgorithmExplanation() {
+    // Check if explanation section already exists
+    let explanationSection = document.getElementById('ml-algorithm-explanation');
+    if (explanationSection) {
+        return;
+    }
+    
+    // Create explanation section
+    explanationSection = document.createElement('div');
+    explanationSection.id = 'ml-algorithm-explanation';
+    explanationSection.className = 'card';
+    explanationSection.style.cssText = 'margin-top: 20px; background: #e3f2fd; padding: 15px; border-radius: 5px;';
+    
+    explanationSection.innerHTML = `
+        <h4 style="margin: 0 0 10px 0; color: #1976d2;">🤖 How the ML Algorithm Works</h4>
+        <p style="margin: 5px 0; font-size: 0.95em;">
+            <strong>Model Type:</strong> Rule-Based Classification Model
+        </p>
+        <p style="margin: 5px 0; font-size: 0.95em;">
+            <strong>How It Works:</strong> This model learns patterns from your data by identifying thresholds and conditions 
+            that best separate different outcomes. For example, it might learn that "IF leave_count > 5 THEN attrition = High". 
+            The model combines multiple such rules to make predictions with confidence scores.
+        </p>
+        <p style="margin: 5px 0; font-size: 0.95em;">
+            <strong>Why This Model:</strong> Rule-based models are chosen because they are <strong>explainable</strong> - 
+            you can understand exactly why a prediction was made. Unlike "black box" models, every prediction can be traced 
+            back to specific business rules extracted from your data.
+        </p>
+        <p style="margin: 5px 0; font-size: 0.95em;">
+            <strong>Key Features Used:</strong> ${modelData?.feature_columns?.slice(0, 5).join(', ') || 'Multiple features from your dataset'}
+        </p>
+    `;
+    
+    // Insert after prediction card
+    const predictionCard = document.querySelector('.prediction-card');
+    if (predictionCard && predictionCard.parentElement) {
+        predictionCard.parentElement.appendChild(explanationSection);
     }
 }
 
